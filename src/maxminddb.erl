@@ -119,8 +119,9 @@ node(#db{root=Root, record_size=S, node_size=N}, K) ->
             {L, R};
         28 ->
             % The layout of 28 bit databases is weird
-            <<LL:24, LH:4, RH:4, RL:24>> = binary:part(Root, Offs, N),
-            {(LH bsl 4) + LL, (RH bsl 4) + RL};
+            <<LL:24/big, LH:4/big, RH:4/big, RL:24/big>> = binary:part(Root, Offs, N),
+            <<L:28/big, R:28/big>> = <<LH:4/big, LL:24/big, RH:4/big, RL:24/big>>,
+            {L, R};
         32 ->
             <<L:S, R:S>> = binary:part(Root, Offs, N),
             {L, R}
