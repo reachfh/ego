@@ -65,9 +65,15 @@ load(Root) ->
         Root :: binary(),
         Metadata :: {binary(), any()}.
 meta(Root) ->
-    Matches = binary:matches(Root, ?MetaMagic, [{scope, {size(Root), -?MetaMax}}]),
+    Matches = meta_matches(Root),
     {Pos, Len} = lists:last(Matches),
     value(#db{root=Root}, Pos + Len).
+
+-spec meta_matches(binary()) -> list(binary:part()).
+meta_matches(Root) when size(Root) > ?MetaMax ->
+    binary:matches(Root, ?MetaMagic, [{scope, {size(Root), -?MetaMax}}]);
+meta_matches(Root) ->
+    binary:matches(Root, ?MetaMagic).
 
 %% @doc Find data for IP
 -spec find(G, Addr) -> Value when
@@ -113,7 +119,7 @@ node(#db{node_count=N, tree_size=T} = G, K) when K > N ->
 % Node
 node(#db{root=Root, record_size=S, node_size=N}, K) ->
     Offs = K * N,
-    {Left, Right} = case S of
+    case S of
         24 ->
             <<L:S, R:S>> = binary:part(Root, Offs, N),
             {L, R};
@@ -125,8 +131,7 @@ node(#db{root=Root, record_size=S, node_size=N}, K) ->
         32 ->
             <<L:S, R:S>> = binary:part(Root, Offs, N),
             {L, R}
-    end,
-    {Left, Right}.
+    end.
 
 %% @doc Decode data field
 -spec decode(G, R) -> {Value, R} when
